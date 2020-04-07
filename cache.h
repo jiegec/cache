@@ -24,10 +24,10 @@ class Cache {
   size_t block_size;
   size_t assoc;
   // cache constants
-  size_t num_set; // cache_size / block_size / assoc
+  size_t num_set;        // cache_size / block_size / assoc
   size_t block_size_lg2; // log2(block_size)
-  size_t assoc_lg2; // log2(assoc)
-  size_t num_set_lg2; // log2(num_set)
+  size_t assoc_lg2;      // log2(assoc)
+  size_t num_set_lg2;    // log2(num_set)
   // algorithm and policy
   Algorithm algo;
   WriteHitPolicy hit_policy;
@@ -38,6 +38,8 @@ class Cache {
 public:
   Cache(size_t block_size, size_t assoc, Algorithm algo,
         WriteHitPolicy hit_policy, WriteMissPolicy miss_policy);
+
+  void run(const std::vector<Trace> &traces, FILE *trace, FILE *info);
 };
 
 std::vector<Trace> readTrace(FILE *fp);

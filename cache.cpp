@@ -54,3 +54,5 @@ std::vector<Trace> readTrace(FILE *fp) {
          res.size(), num_r, num_w, num_u);
   return res;
 }
+
+void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {}
