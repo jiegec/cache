@@ -60,7 +60,7 @@ public:
       uint64_t low = extract(value, 0, 63 - (from % 64));
       uint64_t high = extract(value, 64 - (from % 64), to - from);
       data[from / 64] = extract(data[from / 64], 0, (from % 64 - 1)) | (low << (from % 64));
-      data[to / 64] = extract(data[to / 64], to % 64 + 1, 63) | high;
+      data[to / 64] = (extract(data[to / 64], to % 64 + 1, 63) << (to % 64 + 1)) | high;
     }
   }
 };
