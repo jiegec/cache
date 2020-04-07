@@ -23,6 +23,19 @@ Cache::Cache(size_t block_size, size_t assoc, Algorithm algo,
   this->block_size_lg2 = log2(this->block_size);
   this->assoc_lg2 = log2(this->assoc);
   this->num_set_lg2 = log2(this->num_set);
+
+  this->cachelines = new CacheLine *[this->num_set];
+  for (int i = 0; i < this->num_set; i++) {
+    this->cachelines[i] = new CacheLine[this->assoc];
+    memset(this->cachelines[i], 0, sizeof(CacheLine) * this->assoc);
+  }
+}
+
+Cache::~Cache() {
+  for (int i = 0; i < this->num_set; i++) {
+    delete[] this->cachelines[i];
+  }
+  delete[] this->cachelines;
 }
 
 std::vector<Trace> readTrace(FILE *fp) {
@@ -55,4 +68,21 @@ std::vector<Trace> readTrace(FILE *fp) {
   return res;
 }
 
-void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {}
+void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {
+  this->trace = trace;
+  this->info = info;
+  for (const Trace &access : traces) {
+    if (access.kind == Kind::Read) {
+      read(access);
+    } else if (access.kind == Kind::Write) {
+      write(access);
+    } else {
+      // unsupported
+      assert(false);
+    }
+  }
+}
+
+void Cache::read(const Trace &access) {}
+
+void Cache::write(const Trace &access) {}
