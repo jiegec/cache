@@ -5,7 +5,8 @@
 #include <vector>
 
 int main() {
-  for (size_t bits : {1, 2, 63, 64, 65, 100, 64 * 100}) {
+  for (size_t bits :
+       {1, 2, 63, 64, 65, 66, 100, 126, 127, 128, 129, 64 * 64, 64 * 100}) {
     BitVec bitvec(bits);
     std::vector<bool> ref;
     ref.resize(bits, false);
@@ -35,7 +36,8 @@ int main() {
             num |= (uint64_t)1 << (i - from);
           }
         }
-        printf("Get [%zu:%zu] = %llx %llx\n", to, from, num, bitvec.get(from, to));
+        printf("Get [%zu:%zu] = %llx %llx\n", to, from, num,
+               bitvec.get(from, to));
         assert(bitvec.get(from, to) == num);
       }
     }
