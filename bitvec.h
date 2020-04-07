@@ -11,7 +11,7 @@ inline uint64_t extract(uint64_t value, uint64_t from, uint64_t to) {
   if (to == 63) {
     return value >> from;
   } else {
-    return (value >> from) & ((1 << (to + 1)) - 1);
+    return (value >> from) & (((uint64_t)1 << (to + 1)) - 1);
   }
 }
 
@@ -24,6 +24,7 @@ public:
   BitVec(size_t bits) {
     size_t n = (bits + 63) / 64;
     data = new uint64_t[n];
+    this->bits = bits;
     memset(data, 0, sizeof(uint64_t) * n);
   }
   ~BitVec() { delete data; }
@@ -44,7 +45,7 @@ public:
     }
   }
 
-  void set(size_t from, size_t to, size_t value) {
+  void set(size_t from, size_t to, uint64_t value) {
     assert(from <= to);
     assert(from + 64 > to);
     assert(to < bits);
