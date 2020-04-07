@@ -11,7 +11,7 @@ inline uint64_t extract(uint64_t value, uint64_t from, uint64_t to) {
   if (to == 63) {
     return value >> from;
   } else {
-    return (value >> from) & (((uint64_t)1 << (to + 1)) - 1);
+    return (value >> from) & (((uint64_t)1 << (to - from + 1)) - 1);
   }
 }
 

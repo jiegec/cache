@@ -10,7 +10,7 @@ int main() {
     std::vector<bool> ref;
     ref.resize(bits, false);
     for (int i = 0; i < 100000; i++) {
-      size_t action = rand() % 2;
+      size_t action = rand() % 3;
       size_t from = rand() % bits;
       size_t to = std::min(from + rand() % 64, bits - 1);
       if (action == 0) {
@@ -27,7 +27,7 @@ int main() {
           ref[i] = (num & ((uint64_t)1 << (i - from))) != 0;
         }
         printf("Set [%zu:%zu] = %llx\n", to, from, num);
-      } else if (action == 1) {
+      } else {
         // get
         uint64_t num = 0;
         for (size_t i = from; i <= to; i++) {
