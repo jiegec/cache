@@ -1,5 +1,30 @@
 #include "cache.h"
 
+size_t log2(size_t num) {
+  assert(num != 0);
+  size_t res = 0;
+  while (num > 1) {
+    assert((num & 1) == 0);
+    num >>= 1;
+    res++;
+  }
+  return res;
+}
+
+Cache::Cache(size_t block_size, size_t assoc, Algorithm algo,
+             WriteHitPolicy hit_policy, WriteMissPolicy miss_policy) {
+  this->block_size = block_size;
+  this->assoc = assoc;
+  this->algo = algo;
+  this->hit_policy = hit_policy;
+  this->miss_policy = miss_policy;
+
+  this->num_set = cache_size / block_size / assoc;
+  this->block_size_lg2 = log2(this->block_size);
+  this->assoc_lg2 = log2(this->assoc);
+  this->num_set_lg2 = log2(this->num_set);
+}
+
 std::vector<Trace> readTrace(FILE *fp) {
   char buffer[1024];
   std::vector<Trace> res;
@@ -25,7 +50,7 @@ std::vector<Trace> readTrace(FILE *fp) {
       res.push_back(trace);
     }
   }
-  printf("Read %ld entries: %ld reads, %ld writes, %ld unspecified\n", res.size(),
-         num_r, num_w, num_u);
+  printf("Read %ld entries: %ld reads, %ld writes, %ld unspecified\n",
+         res.size(), num_r, num_w, num_u);
   return res;
 }
