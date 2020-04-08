@@ -17,6 +17,8 @@ $ cmake .. -DCMAKE_BUILD_TYPE=Release
 $ make
 ```
 
+编译和运行在 macOS Catalina 10.15.4 和 Debian Buster 环境下都没有问题。
+
 然后调用 `./cache` 获取一个 trace 对应的结果：
 
 ```shell
