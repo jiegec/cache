@@ -27,7 +27,15 @@ public:
     this->bits = bits;
     memset(data, 0, sizeof(uint64_t) * n);
   }
+  BitVec(const BitVec &other) {
+    size_t n = (other.bits + 63) / 64;
+    this->bits = other.bits;
+    data = new uint64_t[n];
+    memcpy(data, other.data, sizeof(uint64_t) * n);
+  }
   ~BitVec() { delete data; }
+
+  size_t width() { return bits; }
 
   // like verilog [to:from]
   uint64_t get(size_t from, size_t to) {

@@ -23,20 +23,15 @@ Cache::Cache(size_t block_size, size_t assoc, Algorithm algo,
   this->block_size_lg2 = log2(this->block_size);
   this->assoc_lg2 = log2(this->assoc);
   this->num_set_lg2 = log2(this->num_set);
+  this->tag_width = 64 - this->num_set_lg2 - this->block_size_lg2;
 
-  this->cachelines = new CacheLine *[this->num_set];
-  for (int i = 0; i < this->num_set; i++) {
-    this->cachelines[i] = new CacheLine[this->assoc];
-    memset(this->cachelines[i], 0, sizeof(CacheLine) * this->assoc);
-  }
+  this->all_cachelines.resize(this->num_set * this->assoc,
+                              CacheLine(tag_width + 2));
+  this->num_hit = 0;
+  this->num_miss = 0;
 }
 
-Cache::~Cache() {
-  for (int i = 0; i < this->num_set; i++) {
-    delete[] this->cachelines[i];
-  }
-  delete[] this->cachelines;
-}
+Cache::~Cache() {}
 
 std::vector<Trace> readTrace(FILE *fp) {
   char buffer[1024];
@@ -71,6 +66,15 @@ std::vector<Trace> readTrace(FILE *fp) {
 void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {
   this->trace = trace;
   this->info = info;
+  fprintf(info, "Block size: %ld Bytes\n", this->block_size);
+  fprintf(info, "Assoc: %ld-way\n", this->assoc);
+  fprintf(info, "Number of cacheline: %ld\n", this->num_set * this->assoc);
+  fprintf(info, "Tag width: %ld\n", this->tag_width);
+  fprintf(info, "Index width: %ld\n", this->num_set_lg2);
+  fprintf(info, "Offset width: %ld\n", this->block_size_lg2);
+  // for each cacheline: tag+dirty+valid
+  fprintf(info, "Metadata usage in cacheline: %ld Bytes\n",
+          this->num_set * this->assoc * (this->tag_width + 2));
   for (const Trace &access : traces) {
     if (access.kind == Kind::Read) {
       read(access);
@@ -81,8 +85,51 @@ void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {
       assert(false);
     }
   }
+  fprintf(info, "Stats: %ld hit, %ld miss, %.2f%% miss rate", this->num_hit, this->num_miss, 100.0 * (this->num_miss) / (this->num_hit + this->num_miss));
 }
 
-void Cache::read(const Trace &access) {}
+void Cache::read(const Trace &access) {
+  uint64_t tag = (access.addr >> num_set_lg2) >> block_size_lg2;
+  uint64_t index = (access.addr >> block_size_lg2) & (num_set - 1);
+  CacheLine *cacheline = &all_cachelines[index * assoc];
+
+  // find matching cacheline
+  for (size_t i = 0; i < assoc; i++) {
+    if (cacheline[i].get_valid() && cacheline[i].get_tag() == tag) {
+      // hit
+      fprintf(trace, "Hit\n");
+      num_hit++;
+
+      // update state
+      return;
+    }
+  }
+
+  // miss
+  fprintf(trace, "Miss\n");
+  num_miss++;
+
+  size_t victim = 0;
+  if (algo == Algorithm::LRU) {
+  } else if (algo == Algorithm::Random) {
+    bool evict = true;
+    for (size_t i = 0; i < assoc; i++) {
+      if (!cacheline[i].get_valid()) {
+        // found empty
+        evict = false;
+        victim = i;
+        break;
+      }
+    }
+    if (evict) {
+      victim = rand() % assoc;
+    }
+  } else if (algo == Algorithm::PLRU) {
+  }
+
+  cacheline[victim].set_valid(true);
+  cacheline[victim].set_dirty(false);
+  cacheline[victim].set_tag(tag);
+}
 
 void Cache::write(const Trace &access) {}

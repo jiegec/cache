@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
 
             sprintf(buffer, "%s_%zu_%d_%d_%d_%zu.trace", argv[1], block_size,
                     algo, hit, miss, assoc);
+            printf("Writing to %s\n", buffer);
             FILE *trace = fopen(buffer, "w");
             assert(trace);
 
@@ -36,6 +37,8 @@ int main(int argc, char *argv[]) {
             FILE *info = fopen(buffer, "w");
             assert(info);
             cache.run(traces, trace, info);
+            fclose(trace);
+            fclose(info);
           }
         }
       }

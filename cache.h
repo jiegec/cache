@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "bitvec.h"
+
 enum Kind { Read, Write, Unspecified };
 enum Algorithm { LRU, Random, PLRU };
 enum WriteHitPolicy { Writethrough, Writeback };
@@ -23,16 +25,15 @@ struct CacheLine {
   // | dirty | valid | tag |
   // for 8-way 8B-block, low 52bits are used
   // for all-assoc 8B-block, low 63bits are used
-  // although the highest byte can be removed in some cases
-  // anyway we need to handle the 63bits case
-  // thus we don't use uint8_t[7] for clarity
-  uint64_t metadata;
-  uint64_t get_dirty() { return metadata & 1; }
-  void set_dirty(bool dirty) { metadata = (metadata & ~1) | dirty; }
-  uint64_t get_valid() { return (metadata >> 1) & 1; }
-  void set_valid(bool valid) { metadata = (metadata & ~2) | (valid << 1); }
-  uint64_t get_tag() { return metadata >> 2; }
-  void set_tag(uint64_t tag) { metadata = (metadata & 3) | (tag << 2); }
+  BitVec metadata;
+  uint64_t get_dirty() { return metadata.get(0, 0); }
+  void set_dirty(bool dirty) { metadata.set(0, 0, dirty); }
+  uint64_t get_valid() { return metadata.get(1, 1); }
+  void set_valid(bool valid) { metadata.set(1, 1, valid); }
+  uint64_t get_tag() { return metadata.get(2, metadata.width() - 1); }
+  void set_tag(uint64_t tag) { metadata.set(2, metadata.width() - 1, tag); }
+
+  CacheLine(size_t width) : metadata(width) {}
 };
 
 class Cache {
@@ -46,6 +47,7 @@ private:
   size_t block_size_lg2; // log2(block_size)
   size_t assoc_lg2;      // log2(assoc)
   size_t num_set_lg2;    // log2(num_set)
+  size_t tag_width;      // 64 - num_set_lg2 - block_size_lg2
   // algorithm and policy
   Algorithm algo;
   WriteHitPolicy hit_policy;
@@ -57,9 +59,8 @@ private:
   FILE *info;
 
   // these are stored in hardware
-  // array is dynamically allocated
-  // num_set * assoc
-  CacheLine **cachelines;
+  // num_set * assoc elements
+  std::vector<CacheLine> all_cachelines;
 
   void read(const Trace &access);
   void write(const Trace &access);
