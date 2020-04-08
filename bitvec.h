@@ -1,6 +1,8 @@
 #ifndef _BITVEC_H_
 #define _BITVEC_H_
 
+// for assert in release mode
+#undef NDEBUG
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>

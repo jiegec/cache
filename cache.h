@@ -1,6 +1,8 @@
 #ifndef _CACHE_H_
 #define _CACHE_H_
 
+// for assert in release mode
+#undef NDEBUG
 #include <stdint.h>
 #include <stdlib.h>
 #include <vector>
