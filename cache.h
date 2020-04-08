@@ -4,6 +4,7 @@
 // for assert in release mode
 #undef NDEBUG
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <vector>
 

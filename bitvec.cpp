@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <stdlib.h>
+#include <stdio.h>
 #include <vector>
 
 int main() {

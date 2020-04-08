@@ -1,4 +1,5 @@
 #include "cache.h"
+#include <stdio.h>
 
 size_t log2(size_t num) {
   assert(num != 0);
