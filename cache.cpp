@@ -84,6 +84,9 @@ void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {
   }
   if (algo == Algorithm::LRU) {
     fprintf(info, "Replacement Algorithm: LRU\n");
+    this->lru_state.resize(num_set, LRUState(this->assoc_lg2));
+    fprintf(info, "Metadata usage in LRU: %ld Bits\n",
+            this->lru_state.size() * this->lru_state[0].stack.width());
   } else if (algo == Algorithm::Random) {
     fprintf(info, "Replacement Algorithm: Random\n");
   } else if (algo == Algorithm::PLRU) {
@@ -121,6 +124,9 @@ void Cache::read(const Trace &access) {
       num_hit++;
 
       // update state
+      if (algo == Algorithm::LRU) {
+        this->lru_state[index].hit(i);
+      }
       return;
     }
   }
@@ -131,6 +137,10 @@ void Cache::read(const Trace &access) {
 
   size_t victim = 0;
   if (algo == Algorithm::LRU) {
+    // get victim from last element
+    victim = this->lru_state[index].victim();
+    // hit it to put it on top
+    this->lru_state[index].hit(victim);
   } else if (algo == Algorithm::Random) {
     bool evict = true;
     for (size_t i = 0; i < assoc; i++) {

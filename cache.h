@@ -36,6 +36,46 @@ struct CacheLine {
   CacheLine(size_t width) : metadata(width) {}
 };
 
+struct LRUState {
+  // constant
+  // assoc = n = 2^{assoc_lg2}
+  size_t assoc_lg2;
+  // storage of n*log2(n) bits
+  // first log2(n) bits are the most recent
+  BitVec stack;
+
+  // last log2(n) bits are the least recent
+  uint64_t victim() {
+    return stack.get(assoc_lg2 * ((1 << assoc_lg2) - 1), stack.width() - 1);
+  }
+
+  // move i to the top of the stack
+  void hit(uint64_t i) {
+    size_t n = 1 << assoc_lg2;
+    uint64_t last = i;
+    for (size_t j = 0; j < n; j++) {
+      uint64_t item = stack.get(assoc_lg2 * j, assoc_lg2 * (j + 1) - 1);
+      stack.set(assoc_lg2 * j, assoc_lg2 * (j + 1) - 1, last);
+      last = item;
+      if (item == i) {
+        // found
+        return;
+      }
+    }
+    // unreachable
+    assert(false);
+  }
+
+  LRUState(size_t assoc_lg2) : stack(assoc_lg2 * (1 << assoc_lg2)) {
+    this->assoc_lg2 = assoc_lg2;
+    // initialize to: n-1, n-2, ..., 0
+    size_t n = 1 << assoc_lg2;
+    for (size_t i = 0; i < n; i++) {
+      stack.set(assoc_lg2 * i, assoc_lg2 * (i + 1) - 1, n - i - 1);
+    }
+  }
+};
+
 class Cache {
 private:
   // these are not stored in hardware
@@ -61,6 +101,8 @@ private:
   // these are stored in hardware
   // num_set * assoc elements
   std::vector<CacheLine> all_cachelines;
+  // LRU specific: num_set elements
+  std::vector<LRUState> lru_state;
 
   void read(const Trace &access);
   void write(const Trace &access);
