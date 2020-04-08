@@ -91,6 +91,9 @@ void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {
     fprintf(info, "Replacement Algorithm: Random\n");
   } else if (algo == Algorithm::PLRU) {
     fprintf(info, "Replacement Algorithm: Pseudo LRU\n");
+    this->plru_state.resize(num_set, PLRUState(this->assoc_lg2));
+    fprintf(info, "Metadata usage in Pseudo LRU: %ld Bits\n",
+            this->plru_state.size() * this->plru_state[0].state.width());
   }
   // for each cacheline: tag+dirty+valid
   fprintf(info, "Metadata usage in cacheline: %ld Bits\n",
@@ -126,6 +129,8 @@ void Cache::read(const Trace &access) {
       // update state
       if (algo == Algorithm::LRU) {
         this->lru_state[index].hit(i);
+      } else if (algo == Algorithm::PLRU) {
+        this->plru_state[index].access(i);
       }
       return;
     }
@@ -155,6 +160,23 @@ void Cache::read(const Trace &access) {
       victim = rand() % assoc;
     }
   } else if (algo == Algorithm::PLRU) {
+    if (this->plru_state[index].get_all_valid()) {
+      // find victim
+      victim = this->plru_state[index].victim();
+    } else {
+      // find empty
+      for (size_t i = 0; i < assoc; i++) {
+        if (!cacheline[i].get_valid()) {
+          victim = i;
+          if (i == assoc - 1) {
+            // all valid
+            this->plru_state[index].set_all_valid(true);
+          }
+          break;
+        }
+      }
+    }
+    this->plru_state[index].access(victim);
   }
 
   cacheline[victim].set_valid(true);

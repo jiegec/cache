@@ -76,6 +76,45 @@ struct LRUState {
   }
 };
 
+struct PLRUState {
+  // constant
+  size_t assoc_lg2;
+  // bit(0): all_valid
+  // bit(1): root
+  // bit(2*k): left child of bit(k)
+  // bit(2*k+1): right child of bit(k)
+  BitVec state;
+  PLRUState(size_t assoc_lg2) : state((1 << assoc_lg2)) {
+    this->assoc_lg2 = assoc_lg2;
+  }
+  bool get_all_valid() { return state.get(0, 0); }
+  void set_all_valid(bool all_valid) { return state.set(0, 0, all_valid); }
+  void access(uint64_t i) {
+    size_t index = 1;
+    uint64_t mask = 1 << (assoc_lg2 - 1);
+    for (size_t level = 0; level < assoc_lg2; level++) {
+      // set to opposite direction
+      state.set(index, index, (i & mask) == 0);
+      mask >>= 1;
+      // go down
+      index = index * 2 + ((i & mask) != 0);
+    }
+  }
+  uint64_t victim() {
+    size_t result = 0;
+    size_t index = 1;
+    for (size_t level = 0; level < assoc_lg2; level++) {
+      // go right
+      if (state.get(index, index)) {
+        result |= (1 << (assoc_lg2 - level - 1));
+      }
+      // go down
+      index = index * 2 + state.get(index, index);
+    }
+    return result;
+  }
+};
+
 class Cache {
 private:
   // these are not stored in hardware
@@ -103,6 +142,8 @@ private:
   std::vector<CacheLine> all_cachelines;
   // LRU specific: num_set elements
   std::vector<LRUState> lru_state;
+  // PLRU specific: num_set elements
+  std::vector<PLRUState> plru_state;
 
   void read(const Trace &access);
   void write(const Trace &access);
