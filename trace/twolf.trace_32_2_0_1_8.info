@@ -1,0 +1,12 @@
+Block size: 32 Bytes
+Assoc: 8-way
+Number of cacheline: 4096
+Tag width: 50
+Index width: 9
+Offset width: 5
+Write Hit Policy: Writethrough
+Write Miss Policy: Write Non-allocate
+Replacement Algorithm: Pseudo LRU
+Metadata usage in Pseudo LRU: 4096 Bits
+Metadata usage in cacheline: 212992 Bits
+Stats: 477533 hit, 5291 miss, 1.10% miss rate

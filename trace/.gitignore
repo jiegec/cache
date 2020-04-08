@@ -1,3 +1,2 @@
 *.trace_*.trace
-*.trace_*.info
 !*.trace_8_0_1_0_8.*

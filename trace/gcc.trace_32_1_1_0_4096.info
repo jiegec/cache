@@ -1,0 +1,11 @@
+Block size: 32 Bytes
+Assoc: 4096-way
+Number of cacheline: 4096
+Tag width: 59
+Index width: 0
+Offset width: 5
+Write Hit Policy: Writeback
+Write Miss Policy: Write Allocate
+Replacement Algorithm: Random
+Metadata usage in cacheline: 249856 Bits
+Stats: 509512 hit, 6171 miss, 1.20% miss rate
