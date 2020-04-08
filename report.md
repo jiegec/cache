@@ -1,0 +1,37 @@
+# Cache Analysis
+
+## 实验要求
+
+用 C/C++ 编写一个 Cache 模拟器，输入访存 trace，输出统计信息和 Hit/Miss 的记录。
+
+## 实现方法
+
+采用 C++11 实现了实验要求，用 CMake 进行构建管理。编译方法：
+
+```shell
+$ mkdir build
+$ cd build
+$ cmake .. -DCMAKE_BUILD_TYPE=Release
+$ make
+```
+
+然后调用 `./cache` 获取一个 trace 对应的结果：
+
+```shell
+$ ./cache ../trace/astar.trace
+```
+
+它会多线程计算各种情况（Block 大小、相连度、替换算法、写策略）下 Cache 的行为，然后写入到和 trace 统一目录的若干文件中，文件名格式如下：
+
+```
+trace_${BLOCKSIZE}_${ALGO}_${HIT}_${MISS}_${ASSOC}.{info,trace}
+BLOCKSIZE: 块大小，有 8 32 64 三种
+ALGO：替换算法，0代表LRU，1代表随机，2代表二叉树（PLRU）
+HIT：写命中策略，0代表Writethrough，1代表Writeback
+MISS：写缺失策略，0代表Write-Allocate，1代表Write-Nonallocate
+ASSOC：相连度，有全相连，直接映射，4-way和8-way
+info：描述了Cache的一些参数和信息
+trace：描述了Cache的Hit/Miss历史
+```
+
+提交的 `trace` 目录里附带了若干个以 `_8_0_1_0_8.{info,trace}` 结尾的文件，即为实验所需要的块大小为 8B，8-way组关联，LRU策略，写分配+写回情况下各个重点 trace 的访问历史。Info 文件内记录了参数、元数据的大小和缺失率等信息。
