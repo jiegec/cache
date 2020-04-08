@@ -35,7 +35,7 @@ public:
     data = new uint64_t[n];
     memcpy(data, other.data, sizeof(uint64_t) * n);
   }
-  ~BitVec() { delete data; }
+  ~BitVec() { delete [] data; }
 
   size_t width() { return bits; }
 
