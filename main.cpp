@@ -24,6 +24,11 @@ int main(int argc, char *argv[]) {
                                      WriteMissPolicy::WriteNonAllocate}) {
           for (size_t assoc :
                {cache_size / block_size, (size_t)1, (size_t)4, (size_t)8}) {
+            // no meaning when assoc=1 and algo=LRU/PLRU
+            if (assoc == 1 && algo != Algorithm::Random) {
+              continue;
+            }
+
             Cache cache(block_size, assoc, algo, hit, miss);
 
             sprintf(buffer, "%s_%zu_%d_%d_%d_%zu.trace", argv[1], block_size,
