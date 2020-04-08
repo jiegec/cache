@@ -72,8 +72,25 @@ void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {
   fprintf(info, "Tag width: %ld\n", this->tag_width);
   fprintf(info, "Index width: %ld\n", this->num_set_lg2);
   fprintf(info, "Offset width: %ld\n", this->block_size_lg2);
+  if (hit_policy == WriteHitPolicy::Writeback) {
+    fprintf(info, "Write Hit Policy: Writeback\n");
+  } else {
+    fprintf(info, "Write Hit Policy: Writethrough\n");
+  }
+  if (miss_policy == WriteMissPolicy::WriteAllocate) {
+    fprintf(info, "Write Miss Policy: Write Allocate\n");
+  } else {
+    fprintf(info, "Write Miss Policy: Write Non-allocate\n");
+  }
+  if (algo == Algorithm::LRU) {
+    fprintf(info, "Replacement Algorithm: LRU\n");
+  } else if (algo == Algorithm::Random) {
+    fprintf(info, "Replacement Algorithm: Random\n");
+  } else if (algo == Algorithm::PLRU) {
+    fprintf(info, "Replacement Algorithm: Pseudo LRU\n");
+  }
   // for each cacheline: tag+dirty+valid
-  fprintf(info, "Metadata usage in cacheline: %ld Bytes\n",
+  fprintf(info, "Metadata usage in cacheline: %ld Bits\n",
           this->num_set * this->assoc * (this->tag_width + 2));
   for (const Trace &access : traces) {
     if (access.kind == Kind::Read) {
@@ -85,7 +102,10 @@ void Cache::run(const std::vector<Trace> &traces, FILE *trace, FILE *info) {
       assert(false);
     }
   }
-  fprintf(info, "Stats: %ld hit, %ld miss, %.2f%% miss rate", this->num_hit, this->num_miss, 100.0 * (this->num_miss) / (this->num_hit + this->num_miss));
+  fprintf(info, "Stats: %ld hit, %ld miss, %.2f%% miss rate", this->num_hit,
+          this->num_miss,
+          100.0 * (this->num_miss) / (this->num_hit + this->num_miss));
+  assert(this->num_hit + this->num_miss == traces.size());
 }
 
 void Cache::read(const Trace &access) {
@@ -132,4 +152,49 @@ void Cache::read(const Trace &access) {
   cacheline[victim].set_tag(tag);
 }
 
-void Cache::write(const Trace &access) {}
+void Cache::write(const Trace &access) {
+  uint64_t tag = (access.addr >> num_set_lg2) >> block_size_lg2;
+  uint64_t index = (access.addr >> block_size_lg2) & (num_set - 1);
+  CacheLine *cacheline = &all_cachelines[index * assoc];
+
+  // find matching cacheline
+  for (size_t i = 0; i < assoc; i++) {
+    if (cacheline[i].get_valid() && cacheline[i].get_tag() == tag) {
+      // hit
+      if (hit_policy == WriteHitPolicy::Writethrough) {
+        // write through
+        // do nothing because we don't store data
+      } else {
+        // write back
+        cacheline[i].set_dirty(true);
+      }
+
+      // avoid code duplication
+      read(access);
+      return;
+    }
+  }
+
+  // miss
+  if (miss_policy == WriteMissPolicy::WriteNonAllocate) {
+    // write non-allocate
+    // just write, do nothing for no data
+    fprintf(trace, "Miss\n");
+    num_miss++;
+  } else {
+    // write allocate
+    read(access);
+    if (hit_policy == WriteHitPolicy::Writethrough) {
+      // write through
+      // do nothing because we don't care about data
+    } else {
+      // write back
+      for (size_t i = 0; i < assoc; i++) {
+        if (cacheline[i].get_valid() && cacheline[i].get_tag() == tag) {
+          cacheline[i].set_dirty(true);
+          return;
+        }
+      }
+    }
+  }
+}
