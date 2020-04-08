@@ -51,7 +51,7 @@ public:
       // two parts
       uint64_t low = extract(data[from / 64], from % 64, 63);
       uint64_t high = extract(data[to / 64], 0, to % 64);
-      return low | (high << (64 - from));
+      return low | (high << (64 - (from % 64)));
     }
   }
 
